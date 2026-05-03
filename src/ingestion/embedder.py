@@ -13,7 +13,7 @@ from typing import List
 
 import numpy as np
 import torch
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from loguru import logger
 from PIL import Image
 
@@ -23,37 +23,40 @@ from src.config.settings import settings
 # ── 1. Text Embedder ──────────────────────────────────────────
 
 @lru_cache(maxsize=1)
-def get_text_embedder() -> HuggingFaceEmbeddings:
+def get_text_embedder() -> HuggingFaceEndpointEmbeddings:
     """
-    Load and cache the HuggingFace BGE-Large text embedding model.
+    Connect to the HuggingFace Inference API for text embeddings.
+    Offloads memory usage to HuggingFace servers (Option B).
 
-    BGE-Large (bge-large-en-v1.5) produces 1024-dim embeddings
-    and ranks highly on MTEB benchmarks for retrieval tasks.
+    BGE-Small produces 384-dim embeddings.
 
     Returns:
-        LangChain-compatible HuggingFaceEmbeddings instance.
+        LangChain-compatible HuggingFaceEndpointEmbeddings instance.
     """
     logger.info(
-        f"[Embedder] Loading text embedding model: "
+        f"[Embedder] Connecting to HuggingFace Inference API for model: "
         f"'{settings.text_embedding_model}'..."
     )
 
-    # Determine device automatically
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info(f"[Embedder] Using device: {device}")
+    if not settings.huggingface_token:
+        logger.error("[Embedder] Missing HUGGINGFACE_TOKEN.")
+        raise ValueError("HUGGINGFACE_TOKEN must be set to use Inference API.")
 
-    embedder = HuggingFaceEmbeddings(
-        model_name=settings.text_embedding_model,
-        model_kwargs={"device": device},
-        encode_kwargs={
-            # Normalize embeddings for cosine similarity
-            "normalize_embeddings": True,
-            "batch_size": 32,
-        },
-    )
-
-    logger.info("[Embedder] Text embedding model loaded successfully.")
-    return embedder
+    try:
+        embedder = HuggingFaceEndpointEmbeddings(
+            model=settings.text_embedding_model,
+            task="feature-extraction",
+            huggingfacehub_api_token=settings.huggingface_token,
+        )
+        
+        # Validation ping to ensure the API is reachable
+        _ = embedder.embed_query("ping")
+        logger.info("[Embedder] HF Inference API connection successful.")
+        return embedder
+        
+    except Exception as exc:
+        logger.error(f"[Embedder] Failed to connect to HuggingFace API: {exc}")
+        raise RuntimeError("HuggingFace Inference API is unavailable or timing out.") from exc
 
 
 # ── 2. CLIP Image Embedder ────────────────────────────────────

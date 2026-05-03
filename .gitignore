@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Local testing caches
+.cache/
+.chroma/
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/

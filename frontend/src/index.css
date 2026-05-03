@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: #080C14;
+    --surface: #0E1420;
+    --elevated: #141B2D;
+    
+    /* Default / General Hazard Variables */
+    --accent: #6366F1;
+    --glow: rgba(99, 102, 241, 0.10);
+    --border-accent: rgba(99, 102, 241, 0.2);
+    --gradient-start: #080C14;
+    --gradient-end: #0E1228;
+  }
+
+  body {
+    @apply bg-background text-body font-body antialiased;
+    /* Hazard transition rules */
+    transition: all 600ms ease-in-out;
+  }
+
+  /* Dynamic Hazard Classes applied to a wrapper or body */
+  .hazard-flood {
+    --accent: #00B4D8;
+    --glow: rgba(0, 180, 216, 0.12);
+    --border-accent: rgba(0, 180, 216, 0.2);
+    --gradient-start: #080C14;
+    --gradient-end: #071B2F;
+  }
+
+  .hazard-cyclone {
+    --accent: #F59E0B;
+    --glow: rgba(245, 158, 11, 0.12);
+    --border-accent: rgba(245, 158, 11, 0.2);
+    --gradient-start: #0D0A00;
+    --gradient-end: #1A1200;
+  }
+
+  .hazard-heatwave {
+    --accent: #EF4444;
+    --glow: rgba(239, 68, 68, 0.12);
+    --border-accent: rgba(239, 68, 68, 0.2);
+    --gradient-start: #120505;
+    --gradient-end: #1F0A00;
+  }
+
+  .hazard-earthquake {
+    --accent: #B07D62;
+    --glow: rgba(176, 125, 98, 0.12);
+    --border-accent: rgba(176, 125, 98, 0.2);
+    --gradient-start: #0C0A08;
+    --gradient-end: #1A1108;
+  }
+
+  .hazard-drought {
+    --accent: #D4A843;
+    --glow: rgba(212, 168, 67, 0.12);
+    --border-accent: rgba(212, 168, 67, 0.2);
+    --gradient-start: #0C0B06;
+    --gradient-end: #1C1500;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  
+  .glass-input {
+    background: rgba(8, 12, 20, 0.92);
+    backdrop-filter: blur(20px);
+  }
+
+  .shadow-card {
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 24px var(--glow);
+  }
+
+  /* Transition helpers for elements that need hazard coloring */
+  .hazard-transition {
+    transition: background-color 600ms ease-in-out, border-color 600ms ease-in-out, box-shadow 600ms ease-in-out, color 600ms ease-in-out;
+  }
+
+  /* Text styles using our fonts */
+  .text-display {
+    @apply font-syne font-bold;
+  }
+  .text-heading-large {
+    @apply font-syne font-bold;
+  }
+  .text-heading {
+    @apply font-heading font-semibold;
+  }
+  .text-mono {
+    @apply font-mono;
+  }
+}

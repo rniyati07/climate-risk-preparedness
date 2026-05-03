@@ -1,292 +1,240 @@
-# 🌍 Climate Risk Preparedness Advisor
+<div align="center">
+  <img src="https://via.placeholder.com/1200x300/0A0F1A/FFFFFF?text=ARIA+%E2%80%94+Climate+Risk+Preparedness+Advisor" alt="ARIA Banner">
 
-> **Production-grade Agentic Multimodal RAG system** for climate hazard preparedness,
-> powered by LLaMA 3.1 (Groq), BGE-Large embeddings, ChromaDB, CLIP, and RAGAS evaluation.
+  <h1>🌍 ARIA: Climate Risk Preparedness Advisor</h1>
+  <p><em>Empowering communities with life-saving, AI-driven disaster intelligence before, during, and after a crisis strikes.</em></p>
+
+  <!-- Badges -->
+  <p>
+    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+    <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge" alt="LangChain" />
+    <img src="https://img.shields.io/badge/Groq-F55036?style=for-the-badge&logo=groq&logoColor=white" alt="Groq" />
+  </p>
+  <p>
+    <a href="https://climate-risk-preparedness.vercel.app/"><strong>🔗 View Live Demo</strong></a>
+  </p>
+</div>
 
 ---
 
-## 📋 Table of Contents
+## 📖 About the Project
 
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Module Guide](#module-guide)
-- [Running the App](#running-the-app)
-- [Running Tests](#running-tests)
-- [RAGAS Evaluation](#ragas-evaluation)
-- [Adding New Documents](#adding-new-documents)
-- [Environment Variables](#environment-variables)
+When a disaster strikes, critical seconds are lost parsing dense, 200-page government PDFs or endlessly scrolling through generic search results. **ARIA** solves this by translating complex National Disaster Management Authority (NDMA) protocols into instant, actionable, and personalized survival guidance. 
+
+Built as a highly scalable **Agentic Multimodal RAG** (Retrieval-Augmented Generation) system, ARIA is designed for the general public facing imminent threats, local government agencies managing civic response, and relief organizations coordinating ground efforts. While its knowledge base currently focuses on the Indian subcontinent, its architecture is globally adaptable.
 
 ---
 
-## Architecture
+## ✨ Key Features
 
+### 🧠 AI Intelligence
+- **Real-Time Intent Classification:** The LLM actively distinguishes between general educational queries and urgent survival queries to adapt its response format.
+- **Hybrid Retrieval Pipeline:** Always runs hyper-fast text retrieval (BGE embeddings), but dynamically lazy-loads a CLIP vision model if the query specifically requires image-based evacuation routes or maps.
+- **Data Provenance:** Every response includes interactive citation badges showing exactly which government document and page number the information was sourced from.
+
+### 🎨 UI/UX Engineering
+- **Dynamic Hazard Theming:** The entire UI dynamically shifts color palettes based on the detected threat to visually anchor the user's psychological context:
+  - 🌊 **Flood:** Cyan
+  - 🌀 **Cyclone:** Amber
+  - 🌡️ **Heatwave:** Crimson
+  - 🌋 **Earthquake:** Brown
+  - 🏜️ **Drought:** Gold
+  - 🌐 **General:** Indigo
+- **Cinematic Loading Experience:** A premium, pulsing radar-orb animation replaces standard loading spinners to convey systemic processing during emergency queries.
+- **Session Persistence:** Full chat history is strictly saved to the user's local browser storage (`localStorage`), ensuring privacy and zero-cost scaling.
+
+### 🛡️ Safety Design
+- **Dual Response Modes:** 
+  - *Preparedness Mode:* Renders highly structured, actionable "Before / During / After" phase cards for survival queries.
+  - *Information Mode:* Renders clean, easily digestible markdown for general knowledge and contact numbers.
+- **Factual Grounding:** Temperature is set strictly to `0.2` to prevent hallucination, forcing the LLM to rely exclusively on verified NDMA, IMD, and NDRF guidelines.
+
+---
+
+## 🏗️ System Architecture
+
+ARIA uses a decoupled, serverless-ready architecture to ensure maximum uptime during crisis events.
+
+```ascii
+[User / Mobile Device] 
+          │ 
+     (HTTPS POST)
+          ▼
+  [React + Vite UI] ──(Dynamic Theme Engine & Safety Switch)
+          │
+      (REST API)
+          ▼
+  [FastAPI Backend] ──(Embed)──> [HF Inference API (BGE-Small)]
+          │                                     │
+      (Query)                                   ▼
+          │                            [ChromaDB Vector Store]
+          ▼                                     │
+  [LLaMA 3.1 (Groq)] <──(Rerank)── [FlashRank Cross-Encoder]
+          │
+       (JSON)
+          ▼
+[Actionable UI Render]
 ```
-User Query
-    │
-    ▼
-┌─────────────────┐
-│   Risk Agent    │  ← Detects hazard type (flood/cyclone/heatwave/…)
-│  (rule + LLM)   │    and query intent (preparedness/information/emergency)
-└────────┬────────┘
-         │ RiskContext (hazard, intent, confidence)
-         ▼
-┌─────────────────┐
-│   Retriever     │  ← ChromaDB vector similarity search
-│ (BGE-Large +    │    with hazard metadata filtering
-│   CLIP MMDAL)   │    top_k = 5 text chunks + 2 images
-└────────┬────────┘
-         │ Candidate documents
-         ▼
-┌─────────────────┐
-│   Reranker      │  ← FlashRank cross-encoder reranking
-│ (cross-encoder) │    Returns top_n = 3 most relevant chunks
-└────────┬────────┘
-         │ Reranked context
-         ▼
-┌─────────────────┐
-│  RAG Pipeline   │  ← LCEL chain: prompt | LLM | parser
-│  (LLaMA 3.1)    │    Structured (Before/During/After) or freeform output
-└────────┬────────┘
-         │ Answer + Sources
-         ▼
-┌─────────────────┐
-│ RAGAS Evaluation│  ← Faithfulness, Relevancy, Precision, Recall
-└─────────────────┘
-```
+**Architectural Rationale:** The heavy text-embedding workload is entirely offloaded to HuggingFace's Inference API. This keeps the core backend memory footprint drastically low (~200MB), allowing it to fit comfortably within free-tier PaaS limits and scale infinitely during demand spikes.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| **LLM** | Groq LLaMA 3.1 70B Versatile |
-| **Text Embeddings** | HuggingFace `BAAI/bge-large-en-v1.5` (1024-dim) |
-| **Image Embeddings** | OpenCLIP `ViT-B/32` (512-dim) |
-| **Vector Database** | ChromaDB (persistent, on-disk) |
-| **RAG Framework** | LangChain LCEL |
-| **Reranker** | FlashRank (MS-MARCO MiniLM cross-encoder) |
-| **Evaluation** | RAGAS (faithfulness, relevancy, precision, recall) |
-| **UI** | Gradio Blocks |
+| Category | Technology | Purpose |
+|----------|------------|---------|
+| **Frontend** | React, Vite, Tailwind CSS, Framer Motion | Delivers a blazing fast, responsive, and cinematically animated user interface. |
+| **Backend** | Python, FastAPI | Provides a highly concurrent, async REST API for processing RAG workflows. |
+| **LLM Provider** | Groq (LLaMA 3.3 70B) | Ensures near-instantaneous token generation, crucial for time-sensitive emergencies. |
+| **Embeddings** | HuggingFace API (BGE-Small) | Generates high-quality vector representations of text without consuming local server RAM. |
+| **Vector DB** | ChromaDB (Local SQLite) | Stores and retrieves embedded document chunks instantly. Version-controlled via Git. |
+| **Reranker** | FlashRank (TinyBERT) | Acts as a secondary cross-encoder to guarantee the most life-saving documents are prioritized. |
 
 ---
 
-## Quick Start
+## 🚀 Getting Started
 
-### 1. Clone and install
+Follow these steps to run ARIA locally on your machine.
 
+### Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
+- Git
+
+### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/rniyati07/climate-risk-preparedness.git
 cd climate-risk-preparedness
+```
+
+### 2. Backend Setup
+```bash
+# Create and activate a virtual environment
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/Scripts/activate  # (Windows)
+# source venv/bin/activate    # (Mac/Linux)
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Start the FastAPI server
+python server.py
 ```
 
-### 2. Configure environment
-
+### 3. Frontend Setup
 ```bash
-cp .env.example .env
-# Edit .env and set:
-#   GROQ_API_KEY=your_key_here
-```
+# Open a new terminal and navigate to the frontend directory
+cd frontend
 
-Get a free Groq API key at [console.groq.com](https://console.groq.com).
+# Install dependencies
+npm install
 
-### 3. Add PDF documents
-
-Place government disaster/health guideline PDFs in `data/raw/`:
-
-```bash
-mkdir -p data/raw
-cp /path/to/your/pdfs/*.pdf data/raw/
-```
-
-**Filename tip**: Include the hazard name for automatic tagging:
-- `flood_preparedness_guide.pdf` → tagged as `flood`
-- `cyclone_response_manual.pdf` → tagged as `cyclone`
-- `heatwave_advisory_2024.pdf` → tagged as `heatwave`
-
-### 4. Build the vector store
-
-```bash
-python scripts/setup_db.py
-```
-
-Options:
-```bash
-python scripts/setup_db.py --reset      # Wipe and rebuild
-python scripts/setup_db.py --text-only  # Skip CLIP image embeddings (faster)
-```
-
-### 5. Launch the app
-
-```bash
-python app.py
-```
-
-Open [http://localhost:7860](http://localhost:7860) in your browser.
-
----
-
-## Project Structure
-
-```
-climate-risk-preparedness/
-├── app.py                      # Gradio UI entry point
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── README.md
-│
-├── data/
-│   ├── raw/                    # 📥 Place your PDFs here
-│   └── processed/              # Hash registry (auto-generated)
-│
-├── vectorstore/
-│   └── chroma/                 # ChromaDB on-disk storage (auto-generated)
-│
-├── src/
-│   ├── config/
-│   │   └── settings.py         # Centralized configuration (Pydantic)
-│   │
-│   ├── ingestion/
-│   │   ├── loader.py           # PDF text + image extraction
-│   │   ├── chunker.py          # Semantic text chunking
-│   │   └── embedder.py         # BGE-Large + CLIP embedders
-│   │
-│   ├── retrieval/
-│   │   ├── retriever.py        # ChromaDB vector store + search
-│   │   └── reranker.py         # FlashRank cross-encoder reranking
-│   │
-│   ├── agents/
-│   │   └── risk_agent.py       # Hazard detection agent
-│   │
-│   ├── rag/
-│   │   └── pipeline.py         # Full LCEL RAG pipeline
-│   │
-│   ├── evaluation/
-│   │   └── ragas_eval.py       # RAGAS evaluation layer
-│   │
-│   └── utils/
-│       └── helpers.py          # Shared utilities
-│
-├── scripts/
-│   └── setup_db.py             # One-shot DB initialization
-│
-└── tests/
-    ├── conftest.py             # Shared pytest fixtures
-    └── test_pipeline.py        # Full test suite
+# Start the Vite development server
+npm run dev
 ```
 
 ---
 
-## Module Guide
+## 🔐 Environment Variables
 
-### `src/config/settings.py`
-Pydantic `BaseSettings` — all config in one place, loaded from `.env`.
-
-### `src/ingestion/`
-- **`loader.py`** — Extracts text (pypdf) and images (PyMuPDF/fitz) from PDFs. Infers hazard type from filenames.
-- **`chunker.py`** — `RecursiveCharacterTextSplitter` with paragraph → sentence → word hierarchy.
-- **`embedder.py`** — `get_text_embedder()` (BGE-Large singleton) and `CLIPEmbedder` (ViT-B/32 singleton).
-
-### `src/retrieval/`
-- **`retriever.py`** — ChromaDB persistent client, text + image collections, similarity search with metadata filtering.
-- **`reranker.py`** — FlashRank cross-encoder reranking (`rerank_documents()`).
-
-### `src/agents/risk_agent.py`
-Two-stage classifier:
-1. Fast keyword matching (no API call)
-2. LLM escalation for ambiguous queries (Groq)
-
-Returns `RiskContext` with hazard, confidence, intent, and structured output flag.
-
-### `src/rag/pipeline.py`
-LCEL chain: `ChatPromptTemplate | ChatGroq | StrOutputParser`
-
-Two prompt templates:
-- **Preparedness** (Before/During/After/Health Safety)
-- **General** (freeform explanation)
-
-### `src/evaluation/ragas_eval.py`
-- `evaluate_rag()` — batch evaluation
-- `evaluate_single_response()` — single-query evaluation
-- `format_scores_for_display()` — markdown table rendering
-
----
-
-## Running Tests
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test class
-pytest tests/test_pipeline.py::TestRiskAgent -v
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=term-missing
-```
-
----
-
-## RAGAS Evaluation
-
-From the **RAG Evaluation** tab in the UI, or programmatically:
-
-```python
-from src.rag.pipeline import rag_pipeline
-from src.evaluation.ragas_eval import evaluate_single_response, format_scores_for_display
-
-result = rag_pipeline.run("How do I prepare for a flood?")
-
-scores = evaluate_single_response(
-    query=result["query"],
-    answer=result["answer"],
-    retrieved_docs=result["retrieved_docs"],
-    ground_truth="Store emergency supplies, create evacuation plan, know flood zones.",
-)
-
-print(format_scores_for_display(scores))
-```
-
----
-
-## Adding New Documents
-
-1. Place PDFs in `data/raw/`
-2. Run `python scripts/setup_db.py` (only new/changed files are processed)
-3. Restart the app
-
-The hash registry at `data/processed/.processed_hashes.json` tracks which files have been indexed.
-
----
-
-## Environment Variables
+Create a `.env` file in the **root** of the project.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GROQ_API_KEY` | ✅ Yes | Groq API key for LLaMA 3.1 |
-| `HUGGINGFACE_TOKEN` | ❌ Optional | HuggingFace token for private models |
-| `APP_ENV` | ❌ Optional | `development` (default) or `production` |
-| `LOG_LEVEL` | ❌ Optional | `INFO` (default), `DEBUG`, `WARNING` |
+| `GROQ_API_KEY` | ✅ Yes | Free API key from Groq console to power the LLaMA model. |
+| `HUGGINGFACE_TOKEN` | ✅ Yes | Free API token from HuggingFace to power the remote embedding API. |
+| `ALLOWED_ORIGINS` | ❌ No | Commma separated list of allowed frontend URLs for CORS (Defaults to `*`). |
+| `VITE_API_URL` | ❌ No | (Frontend `.env`) URL of the FastAPI backend. Defaults to `http://localhost:8000`. |
 
 ---
 
-## Supported Hazard Types
+## 📁 Project Structure
 
-| Hazard | Emoji | Trigger Keywords |
-|--------|-------|-----------------|
-| `flood` | 🌊 | flood, flooding, inundation, flash flood |
-| `cyclone` | 🌀 | cyclone, hurricane, typhoon, tropical storm |
-| `heatwave` | 🌡️ | heatwave, heat wave, extreme heat, heat stroke |
-| `earthquake` | 🏔️ | earthquake, seismic, tremor, aftershock |
-| `drought` | ☀️ | drought, water scarcity, dry spell |
-| `general` | 🌍 | (fallback for unrecognized queries) |
+```text
+climate-risk-preparedness/
+├── data/                  # Source PDFs and NDMA disaster guidelines
+├── frontend/              # React/Vite web application
+├── src/
+│   ├── agents/            # LLM routing and real-time intent classification
+│   ├── config/            # Centralized Pydantic environment settings
+│   ├── ingestion/         # Document chunking, PDF parsing, and embedding logic
+│   ├── rag/               # Core execution pipeline and prompt templates
+│   └── retrieval/         # Vector DB querying and cross-encoder reranking
+├── vectorstore/           # Pre-calculated ChromaDB SQLite database
+├── server.py              # FastAPI server entry point
+└── requirements.txt       # Python dependencies (CPU-optimized)
+```
 
 ---
 
-*Built with ❤️ for climate resilience.*
+## ⚙️ How It Works
+
+1. **The Query:** A user asks, *"How do I prepare my house for a cyclone?"*
+2. **Classification:** The `risk_agent` instantly categorizes the hazard (`cyclone`) and the intent (`preparedness`).
+3. **Retrieval:** The query is embedded via HuggingFace API and matched against the local ChromaDB vector store. 
+4. **Reranking:** FlashRank evaluates the top 15 retrieved documents and strictly orders them by relevance to survival.
+5. **Generation:** Groq's LLaMA model processes the top documents through a highly constrained system prompt, stripping out fluff and focusing purely on actionable steps.
+6. **Rendering:** The React frontend detects the `preparedness` intent and the `cyclone` hazard, shifting the UI to an Amber theme and rendering the response in structured "Before, During, and After" phase cards.
+
+---
+
+## 📚 Disaster Coverage
+
+ARIA is currently trained on the following localized hazard profiles:
+
+| Hazard | Theme Color | Primary Sources |
+|--------|-------------|-----------------|
+| **Flood** | 🌊 Cyan | NDMA Flood Guidelines, State Evacuation Protocols |
+| **Cyclone** | 🌀 Amber | IMD Cyclone Warnings, NDRF Checklists |
+| **Heatwave** | 🌡️ Crimson | NDMA Heat Action Plans, Local Health Advisories |
+| **Earthquake** | 🌋 Brown | NDMA Seismic Safety Guides, Structural Checklists |
+| **Drought** | 🏜️ Gold | Agricultural Advisories, Water Conservation Protocols |
+
+---
+
+## 🌐 Deployment
+
+ARIA is fully optimized for free-tier cloud deployment.
+
+1. **Database:** Because the vector dataset is highly curated and <100MB, the `chroma_db` is committed directly to GitHub. This eliminates the need for expensive cloud vector databases.
+2. **Backend (Render):** Deploy the root repository to Render as a Web Service. The `requirements.txt` is strictly CPU-optimized to ensure lightning-fast builds (<2 mins) and prevent memory crashes.
+3. **Frontend (Vercel):** Deploy the `frontend/` directory to Vercel. Add your Render backend URL to Vercel's `VITE_API_URL` environment variable.
+
+---
+
+## 🛣️ Roadmap
+
+- [ ] **Multilingual Support:** Integrate seamless translation to support Tamil, Hindi, and regional dialects.
+- [ ] **Real-Time Weather API:** Connect to IMD APIs to provide live alert banners for the user's geolocation.
+- [ ] **SMS Gateway:** Allow users to text queries to ARIA when internet access is down during a crisis.
+- [ ] **Mobile App:** Package the web experience into an offline-capable PWA.
+
+---
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 🙏 Acknowledgements
+
+- **[National Disaster Management Authority (NDMA)](https://ndma.gov.in/)** for their comprehensive, life-saving guidelines.
+- **[India Meteorological Department (IMD)](https://mausam.imd.gov.in/)** for extreme weather operational protocols.
+- **[Groq](https://groq.com/)** for providing LPU inference speeds that make real-time emergency chatbots possible.
+- **[HuggingFace](https://huggingface.co/)** for open-source embedding models.
+- **[Chroma](https://www.trychroma.com/)** for lightweight, edge-ready vector search.

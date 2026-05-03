@@ -19,11 +19,12 @@ langchain-chroma>=0.1.4
 # --- Vector Database ---
 chromadb>=0.5.5
 
-# --- Embeddings ---
+# --- Embeddings (CPU Optimized for Render) ---
+--extra-index-url https://download.pytorch.org/whl/cpu
 sentence-transformers>=3.0.1
 transformers>=4.44.2
-torch>=2.6.0
-torchvision>=0.19.0
+torch
+torchvision
 Pillow>=10.4.0
 
 # --- CLIP (Multimodal Embeddings) ---

@@ -48,10 +48,7 @@ def get_text_embedder() -> HuggingFaceEndpointEmbeddings:
             task="feature-extraction",
             huggingfacehub_api_token=settings.huggingface_token,
         )
-        
-        # Validation ping to ensure the API is reachable
-        _ = embedder.embed_query("ping")
-        logger.info("[Embedder] HF Inference API connection successful.")
+        logger.info("[Embedder] HF Inference API wrapper loaded successfully.")
         return embedder
         
     except Exception as exc:
